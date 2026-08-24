@@ -1,0 +1,22 @@
+# Core Machine Learning & Tabular
+scikit-learn>=1.4.0
+xgboost>=2.0.0
+pandas>=2.0.0
+numpy>=1.24.0
+scipy>=1.10.0
+joblib>=1.3.0
+
+# NLP & Deep Learning
+transformers>=4.38.0
+
+# Explainability & Visualizations
+shap>=0.44.0
+matplotlib>=3.7.0
+seaborn>=0.13.0
+
+# Web Application & Serving
+streamlit>=1.32.0
+requests>=2.31.0
+
+# Testing & Quality
+pytest>=8.0.0

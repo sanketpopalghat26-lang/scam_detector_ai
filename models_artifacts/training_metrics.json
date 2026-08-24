@@ -1,0 +1,49 @@
+{
+  "sms_baseline": {
+    "model_name": "SMS Branch (Baseline LR)",
+    "precision": 0.9448818897637795,
+    "recall": 0.9375,
+    "f1": 0.9411764705882353,
+    "true_negatives": 897,
+    "false_positives": 7,
+    "false_negatives": 8,
+    "true_positives": 120,
+    "total_samples": 1032,
+    "roc_auc": 0.9971048810840708,
+    "pr_auc": 0.985116705003006
+  },
+  "email_baseline": {
+    "model_name": "Email Branch (Baseline LR)",
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "true_negatives": 120,
+    "false_positives": 0,
+    "false_negatives": 0,
+    "true_positives": 120,
+    "total_samples": 240,
+    "roc_auc": 1.0,
+    "pr_auc": 1.0
+  },
+  "url_model": {
+    "model_name": "URL Branch (XGBoost - Domain Split)",
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "true_negatives": 163,
+    "false_positives": 0,
+    "false_negatives": 0,
+    "true_positives": 181,
+    "total_samples": 344,
+    "roc_auc": 1.0,
+    "pr_auc": 1.0
+  },
+  "ensemble": {
+    "status": "trained_and_serialized",
+    "weights": {
+      "email": 0.35,
+      "sms": 0.35,
+      "url": 0.3
+    }
+  }
+}
