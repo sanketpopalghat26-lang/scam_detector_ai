@@ -1,368 +1,1046 @@
 """Streamlit Web Application: Multi-Channel Cyber Scam Detection Dashboard.
-Provides real-time interactive threat classification, explainability, and multi-channel incident aggregation.
+Whitehat AI with interactive green net grid, smooth shooting star falling animation in hero box,
+and aesthetic yellow/white typography.
 """
 
 import sys
 import os
+import json
+import time
 
-# Ensure project root is in sys.path when running from app/ directory
+# Ensure project root is in sys.path
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 import streamlit as st
+import streamlit.components.v1 as components
 import pandas as pd
 import numpy as np
-import json
-import time
 
-# Set page configuration
+# Configure page settings without emojis
 st.set_page_config(
-    page_title="AI Cyber Scam Detector | Multi-Channel Defense",
-    page_icon="🛡️",
+    page_title="Whitehat AI | Threat Intelligence & Scam Defense",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
-# Custom CSS for rich dark cyber aesthetics
+# Inject Interactive Green Net Grid + Smooth Hero Shooting Stars Canvas Engine
+components.html("""
+<script>
+(function() {
+    const parentDoc = window.parent.document;
+    
+    // -------------------------------------------------------------
+    // 1. Full-Screen Interactive Net Grid Canvas
+    // -------------------------------------------------------------
+    let netCanvas = parentDoc.getElementById('cyber-net-canvas');
+    if (!netCanvas) {
+        netCanvas = parentDoc.createElement('canvas');
+        netCanvas.id = 'cyber-net-canvas';
+        netCanvas.style.position = 'fixed';
+        netCanvas.style.top = '0';
+        netCanvas.style.left = '0';
+        netCanvas.style.width = '100vw';
+        netCanvas.style.height = '100vh';
+        netCanvas.style.zIndex = '0';
+        netCanvas.style.pointerEvents = 'none';
+        netCanvas.style.backgroundColor = '#04070d';
+        parentDoc.body.prepend(netCanvas);
+    }
+    
+    const netCtx = netCanvas.getContext('2d');
+    let netWidth, netHeight;
+    let gridPoints = [];
+    const spacing = 48;
+    
+    const mouse = {
+        x: -1000,
+        y: -1000,
+        radius: 200
+    };
+    
+    function resizeNet() {
+        netWidth = netCanvas.width = window.parent.innerWidth;
+        netHeight = netCanvas.height = window.parent.innerHeight;
+        initGrid();
+    }
+    
+    function initGrid() {
+        gridPoints = [];
+        const cols = Math.ceil(netWidth / spacing) + 2;
+        const rows = Math.ceil(netHeight / spacing) + 2;
+        
+        for (let r = 0; r < rows; r++) {
+            gridPoints[r] = [];
+            for (let c = 0; c < cols; c++) {
+                const bx = (c - 1) * spacing;
+                const by = (r - 1) * spacing;
+                gridPoints[r][c] = {
+                    baseX: bx,
+                    baseY: by,
+                    x: bx,
+                    y: by,
+                    vx: 0,
+                    vy: 0,
+                    phase: (c * 0.3) + (r * 0.3)
+                };
+            }
+        }
+    }
+    
+    function onMouseMove(e) {
+        mouse.x = e.clientX;
+        mouse.y = e.clientY;
+    }
+    
+    function onTouchMove(e) {
+        if (e.touches.length > 0) {
+            mouse.x = e.touches[0].clientX;
+            mouse.y = e.touches[0].clientY;
+        }
+    }
+    
+    parentDoc.addEventListener('mousemove', onMouseMove, { passive: true });
+    parentDoc.addEventListener('touchmove', onTouchMove, { passive: true });
+    window.addEventListener('resize', resizeNet);
+    resizeNet();
+    
+    let netFrame = 0;
+    function animateNet() {
+        netFrame++;
+        const time = netFrame * 0.025;
+        
+        netCtx.clearRect(0, 0, netWidth, netHeight);
+        
+        const bgGrad = netCtx.createRadialGradient(netWidth/2, netHeight/2, netWidth*0.1, netWidth/2, netHeight/2, netWidth*0.8);
+        bgGrad.addColorStop(0, '#060c14');
+        bgGrad.addColorStop(1, '#020408');
+        netCtx.fillStyle = bgGrad;
+        netCtx.fillRect(0, 0, netWidth, netHeight);
+        
+        const rows = gridPoints.length;
+        if (rows > 0) {
+            const cols = gridPoints[0].length;
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const p = gridPoints[r][c];
+                    const waveX = Math.sin(time + p.phase) * 6;
+                    const waveY = Math.cos(time + p.phase * 1.2) * 6;
+                    
+                    const dx = mouse.x - p.x;
+                    const dy = mouse.y - p.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    
+                    let forceX = 0;
+                    let forceY = 0;
+                    if (dist < mouse.radius && dist > 0) {
+                        const power = (1 - dist / mouse.radius);
+                        const angle = Math.atan2(dy, dx);
+                        const push = power * 45;
+                        forceX = -Math.cos(angle) * push;
+                        forceY = -Math.sin(angle) * push;
+                    }
+                    
+                    const targetX = p.baseX + waveX + forceX;
+                    const targetY = p.baseY + waveY + forceY;
+                    
+                    p.vx = (targetX - p.x) * 0.12;
+                    p.vy = (targetY - p.y) * 0.12;
+                    p.x += p.vx;
+                    p.y += p.vy;
+                }
+            }
+            
+            netCtx.strokeStyle = 'rgba(16, 215, 120, 0.42)';
+            netCtx.lineWidth = 1.35;
+            netCtx.shadowColor = '#00ff88';
+            netCtx.shadowBlur = 4;
+            
+            for (let r = 0; r < rows; r++) {
+                netCtx.beginPath();
+                netCtx.moveTo(gridPoints[r][0].x, gridPoints[r][0].y);
+                for (let c = 1; c < cols - 1; c++) {
+                    const xc = (gridPoints[r][c].x + gridPoints[r][c + 1].x) / 2;
+                    const yc = (gridPoints[r][c].y + gridPoints[r][c + 1].y) / 2;
+                    netCtx.quadraticCurveTo(gridPoints[r][c].x, gridPoints[r][c].y, xc, yc);
+                }
+                netCtx.lineTo(gridPoints[r][cols - 1].x, gridPoints[r][cols - 1].y);
+                netCtx.stroke();
+            }
+            
+            for (let c = 0; c < cols; c++) {
+                netCtx.beginPath();
+                netCtx.moveTo(gridPoints[0][c].x, gridPoints[0][c].y);
+                for (let r = 1; r < rows - 1; r++) {
+                    const xc = (gridPoints[r][c].x + gridPoints[r + 1][c].x) / 2;
+                    const yc = (gridPoints[r][c].y + gridPoints[r + 1][c].y) / 2;
+                    netCtx.quadraticCurveTo(gridPoints[r][c].x, gridPoints[r][c].y, xc, yc);
+                }
+                netCtx.lineTo(gridPoints[rows - 1][c].x, gridPoints[rows - 1][c].y);
+                netCtx.stroke();
+            }
+        }
+        
+        if (mouse.x > 0 && mouse.y > 0) {
+            const glow = netCtx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, mouse.radius * 1.2);
+            glow.addColorStop(0, 'rgba(0, 255, 140, 0.12)');
+            glow.addColorStop(1, 'rgba(0, 255, 140, 0)');
+            netCtx.fillStyle = glow;
+            netCtx.beginPath();
+            netCtx.arc(mouse.x, mouse.y, mouse.radius * 1.2, 0, Math.PI * 2);
+            netCtx.fill();
+        }
+        
+        requestAnimationFrame(animateNet);
+    }
+    animateNet();
+
+    // -------------------------------------------------------------
+    // 2. Smooth Falling Shooting Stars in Hero Box
+    // -------------------------------------------------------------
+    let heroStars = [];
+    let bgTwinkleStars = [];
+    const NUM_SHOOTING_LANES = 6;
+    
+    function initHeroStars(w, h) {
+        // Background subtle twinkling stars
+        bgTwinkleStars = [];
+        const numTwinkle = 35;
+        const colors = ['#ffffff', '#fef08a', '#38bdf8', '#f472b6', '#e0e7ff'];
+        for (let i = 0; i < numTwinkle; i++) {
+            bgTwinkleStars.push({
+                x: Math.random() * w,
+                y: Math.random() * h,
+                radius: 0.8 + Math.random() * 1.6,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                phase: Math.random() * Math.PI * 2,
+                speed: 0.02 + Math.random() * 0.03,
+                sparkle: Math.random() > 0.65
+            });
+        }
+        
+        // Shooting stars assigned to non-overlapping diagonal lanes
+        heroStars = [];
+        const laneWidth = w / NUM_SHOOTING_LANES;
+        for (let i = 0; i < NUM_SHOOTING_LANES; i++) {
+            heroStars.push({
+                lane: i,
+                x: i * laneWidth + Math.random() * (laneWidth * 0.7),
+                y: -100 - (i * 120 + Math.random() * 100),
+                length: 90 + Math.random() * 60,
+                speed: 7.5 + Math.random() * 4,
+                angle: Math.PI / 4, // 45 degrees diagonal trajectory
+                active: false,
+                delay: i * 45 + Math.floor(Math.random() * 40),
+                headColor: Math.random() > 0.3 ? '#ffffff' : '#fef08a',
+                tailColor: Math.random() > 0.4 ? 'rgba(56, 189, 248, ' : 'rgba(254, 240, 138, '
+            });
+        }
+    }
+    
+    function drawStarFlare(ctx, cx, cy, radius, color) {
+        ctx.save();
+        ctx.fillStyle = color;
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 8;
+        
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 4-point light ray burst
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1;
+        const rayLen = radius * 3.5;
+        
+        ctx.beginPath();
+        ctx.moveTo(cx - rayLen, cy);
+        ctx.lineTo(cx + rayLen, cy);
+        ctx.moveTo(cx, cy - rayLen);
+        ctx.lineTo(cx, cy + rayLen);
+        ctx.stroke();
+        
+        ctx.restore();
+    }
+    
+    let lastHeroW = 0, lastHeroH = 0;
+    function animateHeroStars() {
+        const heroCanvas = parentDoc.getElementById('hero-stars-canvas');
+        if (heroCanvas) {
+            const rect = heroCanvas.getBoundingClientRect();
+            if (rect.width > 0 && rect.height > 0) {
+                if (heroCanvas.width !== Math.floor(rect.width) || heroCanvas.height !== Math.floor(rect.height)) {
+                    heroCanvas.width = Math.floor(rect.width);
+                    heroCanvas.height = Math.floor(rect.height);
+                    lastHeroW = heroCanvas.width;
+                    lastHeroH = heroCanvas.height;
+                    initHeroStars(lastHeroW, lastHeroH);
+                }
+                
+                const hCtx = heroCanvas.getContext('2d');
+                const w = heroCanvas.width;
+                const h = heroCanvas.height;
+                
+                hCtx.clearRect(0, 0, w, h);
+                
+                // 1. Draw twinkling cosmos stars
+                for (let i = 0; i < bgTwinkleStars.length; i++) {
+                    const s = bgTwinkleStars[i];
+                    s.phase += s.speed;
+                    const alpha = 0.3 + 0.6 * (0.5 + 0.5 * Math.sin(s.phase));
+                    
+                    hCtx.save();
+                    hCtx.globalAlpha = alpha;
+                    if (s.sparkle && alpha > 0.7) {
+                        drawStarFlare(hCtx, s.x, s.y, s.radius * 1.2, s.color);
+                    } else {
+                        hCtx.fillStyle = s.color;
+                        hCtx.beginPath();
+                        hCtx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
+                        hCtx.fill();
+                    }
+                    hCtx.restore();
+                }
+                
+                // 2. Draw smoothly falling shooting stars (without collision/overlapping)
+                const laneWidth = w / NUM_SHOOTING_LANES;
+                for (let i = 0; i < heroStars.length; i++) {
+                    const star = heroStars[i];
+                    
+                    if (star.delay > 0) {
+                        star.delay--;
+                        continue;
+                    }
+                    
+                    const dx = Math.cos(star.angle);
+                    const dy = Math.sin(star.angle);
+                    
+                    star.x += dx * star.speed;
+                    star.y += dy * star.speed;
+                    
+                    const tailX = star.x - dx * star.length;
+                    const tailY = star.y - dy * star.length;
+                    
+                    // Draw smooth gradient tail
+                    const grad = hCtx.createLinearGradient(tailX, tailY, star.x, star.y);
+                    grad.addColorStop(0, star.tailColor + '0)');
+                    grad.addColorStop(0.65, star.tailColor + '0.45)');
+                    grad.addColorStop(1, 'rgba(255, 255, 255, 0.95)');
+                    
+                    hCtx.save();
+                    hCtx.strokeStyle = grad;
+                    hCtx.lineWidth = 1.8;
+                    hCtx.lineCap = 'round';
+                    hCtx.shadowColor = '#ffffff';
+                    hCtx.shadowBlur = 6;
+                    
+                    hCtx.beginPath();
+                    hCtx.moveTo(tailX, tailY);
+                    hCtx.lineTo(star.x, star.y);
+                    hCtx.stroke();
+                    
+                    // Glowing shooting star head
+                    drawStarFlare(hCtx, star.x, star.y, 2.2, star.headColor);
+                    hCtx.restore();
+                    
+                    // Respawn star smoothly when it exits canvas
+                    if (tailY > h + 50 || tailX > w + 50) {
+                        star.x = star.lane * laneWidth + Math.random() * (laneWidth * 0.7) - 60;
+                        star.y = -60 - Math.random() * 80;
+                        star.length = 90 + Math.random() * 60;
+                        star.speed = 7.5 + Math.random() * 4;
+                        star.delay = 35 + Math.floor(Math.random() * 70); // Staggered delay ensures no overlap
+                    }
+                }
+            }
+        }
+        requestAnimationFrame(animateHeroStars);
+    }
+    animateHeroStars();
+})();
+</script>
+""", height=0)
+
+# Custom CSS for Yellow & White Luxury Theme over Net Grid & Shooting Stars
 st.markdown("""
 <style>
-    /* Global Styling */
-    .stApp {
-        background-color: #0b0f19;
-        color: #e2e8f0;
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500;1,6..72,600&display=swap');
+
+    /* Global canvas & translucent background */
+    html, body, .stApp {
+        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+        background-color: transparent !important;
+        color: #ffffff !important;
     }
     
-    /* Headers & Typography */
-    h1, h2, h3 {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    a {
+        text-decoration: none !important;
+    }
+
+    #MainMenu, header, footer {
+        visibility: hidden;
+    }
+
+    .block-container {
+        padding-top: 1.25rem !important;
+        padding-bottom: 3rem !important;
+        max-width: 1200px !important;
+        position: relative;
+        z-index: 1;
+    }
+
+    /* Top Navigation Bar */
+    .nav-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 1.75rem;
+        background: rgba(10, 16, 26, 0.75);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(250, 204, 21, 0.2);
+        border-radius: 9999px;
+        margin-bottom: 2rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+    .brand-logo {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 1.25rem;
         font-weight: 700;
+        letter-spacing: -0.02em;
+        color: #ffffff !important;
     }
-    .main-title {
-        background: linear-gradient(135deg, #38bdf8 0%, #818cf8 50%, #c084fc 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        font-size: 2.4rem;
-        font-weight: 800;
-        margin-bottom: 0.2rem;
+    .brand-badge-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background-color: #facc15;
+        box-shadow: 0 0 10px #facc15;
+        display: inline-block;
     }
-    .subtitle {
-        color: #94a3b8;
-        font-size: 1.05rem;
+    .nav-links {
+        display: flex;
+        gap: 2.2rem;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+    .nav-links a {
+        color: #cbd5e1 !important;
+        font-size: 0.92rem;
+        font-weight: 500;
+        transition: color 0.2s ease;
+    }
+    .nav-links a:hover {
+        color: #facc15 !important;
+    }
+
+    /* Hero Section with Glass Arch & Shooting Stars Canvas */
+    .hero-wrapper {
+        position: relative;
+        text-align: center;
+        padding: 3.5rem 1.5rem;
+        background: radial-gradient(ellipse 850px 450px at 50% 35%, rgba(12, 22, 42, 0.85) 0%, rgba(8, 14, 28, 0.75) 60%, rgba(4, 8, 18, 0.65) 100%);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(250, 204, 21, 0.25);
+        border-radius: 36px;
+        margin-bottom: 2.5rem;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        overflow: hidden;
+    }
+
+    .hero-stars-canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 2;
+    }
+
+    /* Floating badges arch */
+    .arch-badges {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 2rem;
+        margin-bottom: 2rem;
+    }
+    .floating-app-icon {
+        background: rgba(15, 25, 40, 0.88);
+        width: 56px;
+        height: 56px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        transition: transform 0.25s ease, border-color 0.25s ease;
+    }
+    .floating-app-icon:hover {
+        transform: translateY(-4px);
+        border-color: #facc15;
+    }
+    .icon-1 { transform: translateY(14px) rotate(-4deg); }
+    .icon-2 { transform: translateY(3px) rotate(-2deg); }
+    .icon-3 { transform: translateY(-6px); }
+    .icon-4 { transform: translateY(3px) rotate(2deg); }
+    .icon-5 { transform: translateY(14px) rotate(4deg); }
+
+    /* Hero Headline - Yellow & White Combination with Tilted Aesthetic Word */
+    h1.hero-headline, .hero-headline {
+        font-family: 'Newsreader', 'Playfair Display', Georgia, serif !important;
+        font-size: 4.1rem !important;
+        line-height: 1.12 !important;
+        font-weight: 400 !important;
+        letter-spacing: -0.025em !important;
+        color: #ffffff !important;
+        margin: 0 auto 1.35rem auto !important;
+        max-width: 860px !important;
+    }
+
+    .tilted-yellow-word {
+        font-family: 'Newsreader', 'Playfair Display', Georgia, serif !important;
+        font-style: italic !important;
+        color: #facc15 !important;
+        display: inline-block;
+        transform: rotate(-3.5deg);
+        margin: 0 0.12em;
+        text-shadow: 0 0 25px rgba(250, 204, 21, 0.45);
+        font-weight: 500 !important;
+    }
+
+    .hero-subheadline {
+        font-size: 1.1rem;
+        line-height: 1.65;
+        color: #cbd5e1;
+        max-width: 660px;
+        margin: 0 auto;
+        font-weight: 400;
+    }
+
+    /* Clean Frosted Cards */
+    .clean-card {
+        background: rgba(10, 18, 30, 0.7);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 24px;
+        padding: 1.75rem;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.35);
         margin-bottom: 1.5rem;
     }
-    
-    /* Metric Cards */
-    .cyber-card {
-        background: rgba(17, 24, 39, 0.7);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 12px;
-        padding: 1.25rem;
-        backdrop-filter: blur(10px);
+
+    .card-title {
+        font-family: 'Newsreader', serif;
+        font-size: 1.55rem;
+        font-weight: 500;
+        color: #ffffff;
+        margin-bottom: 0.35rem;
+    }
+    .card-description {
+        font-size: 0.92rem;
+        color: #94a3b8;
+        margin-bottom: 1.25rem;
+    }
+
+    /* Verdict Badges */
+    .verdict-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0.5rem 1.15rem;
+        border-radius: 9999px;
+        font-size: 0.88rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
         margin-bottom: 1rem;
     }
-    
-    .verdict-badge-scam {
-        background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
-        color: white;
-        padding: 6px 16px;
-        border-radius: 20px;
-        font-weight: 700;
-        letter-spacing: 1px;
-        display: inline-block;
-        box-shadow: 0 4px 14px rgba(239, 68, 68, 0.35);
+    .verdict-scam {
+        background-color: rgba(239, 68, 68, 0.15);
+        color: #f87171;
+        border: 1px solid rgba(239, 68, 68, 0.4);
     }
-    
-    .verdict-badge-benign {
-        background: linear-gradient(135deg, #10b981 0%, #047857 100%);
-        color: white;
-        padding: 6px 16px;
-        border-radius: 20px;
-        font-weight: 700;
-        letter-spacing: 1px;
-        display: inline-block;
-        box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+    .verdict-benign {
+        background-color: rgba(250, 204, 21, 0.15);
+        color: #facc15;
+        border: 1px solid rgba(250, 204, 21, 0.4);
     }
-    
-    .factor-item {
-        padding: 8px 12px;
-        margin: 6px 0;
-        border-radius: 6px;
-        background: rgba(255, 255, 255, 0.03);
-        border-left: 3px solid #6366f1;
-        font-size: 0.92rem;
+
+    /* Factor List */
+    .factor-pill {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        margin-bottom: 0.5rem;
+        border-radius: 12px;
+        background: rgba(15, 23, 42, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        font-size: 0.88rem;
     }
     .factor-risk {
-        border-left-color: #ef4444;
+        border-left: 3px solid #ef4444;
     }
     .factor-safe {
-        border-left-color: #10b981;
+        border-left: 3px solid #facc15;
+    }
+
+    /* Premium Rotating RGB Conic Animation */
+    @property --angle {
+        syntax: '<angle>';
+        initial-value: 0deg;
+        inherits: false;
+    }
+
+    @keyframes rotateRGB {
+        0% {
+            --angle: 0deg;
+        }
+        100% {
+            --angle: 360deg;
+        }
+    }
+
+    /* Animated Rotating RGB Border on Text Inputs and Text Areas */
+    .stTextInput > div, .stTextArea > div {
+        position: relative !important;
+        border-radius: 16px !important;
+        padding: 2px !important;
+        background: conic-gradient(from var(--angle, 0deg), #ff0055, #ff5500, #ffea00, #00ff66, #00e1ff, #7a00ff, #ff0055) !important;
+        animation: rotateRGB 3.5s linear infinite !important;
+        box-shadow: 0 0 16px rgba(0, 225, 255, 0.25), 0 0 35px rgba(255, 0, 85, 0.15) !important;
+        transition: box-shadow 0.3s ease !important;
+        border: none !important;
+    }
+
+    .stTextInput > div:focus-within, .stTextArea > div:focus-within {
+        box-shadow: 0 0 25px rgba(0, 225, 255, 0.55), 0 0 50px rgba(255, 0, 85, 0.35) !important;
+    }
+
+    .stTextInput [data-baseweb="input"], .stTextArea [data-baseweb="textarea"] {
+        border: none !important;
+        background-color: transparent !important;
+        border-radius: 14px !important;
+        box-shadow: none !important;
+    }
+
+    .stTextInput input, .stTextArea textarea {
+        border-radius: 14px !important;
+        border: none !important;
+        background-color: #080e18 !important;
+        color: #ffffff !important;
+        font-size: 0.95rem !important;
+        box-shadow: none !important;
+    }
+    .stTextInput input:focus, .stTextArea textarea:focus {
+        background-color: #0a111e !important;
+        color: #ffffff !important;
+        outline: none !important;
+    }
+
+    .stButton button[kind="primary"] {
+        background: linear-gradient(135deg, #facc15 0%, #eab308 100%) !important;
+        color: #0f172a !important;
+        border-radius: 9999px !important;
+        padding: 0.6rem 1.6rem !important;
+        font-weight: 700 !important;
+        border: none !important;
+        box-shadow: 0 4px 18px rgba(250, 204, 21, 0.3) !important;
+        transition: all 0.2s ease !important;
+    }
+    .stButton button[kind="primary"]:hover {
+        background: linear-gradient(135deg, #fde047 0%, #facc15 100%) !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 6px 22px rgba(250, 204, 21, 0.45) !important;
+    }
+    .stButton button[kind="secondary"] {
+        border-radius: 9999px !important;
+        background-color: rgba(15, 23, 42, 0.6) !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        color: #cbd5e1 !important;
+        font-size: 0.85rem !important;
+        font-weight: 500 !important;
+    }
+    .stButton button[kind="secondary"]:hover {
+        border-color: #facc15 !important;
+        color: #facc15 !important;
+    }
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+        background-color: rgba(10, 16, 26, 0.75);
+        backdrop-filter: blur(12px);
+        padding: 6px;
+        border-radius: 9999px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        justify-content: center;
+        margin-bottom: 2rem;
+    }
+    .stTabs [data-baseweb="tab"] {
+        border-radius: 9999px !important;
+        padding: 8px 22px !important;
+        font-weight: 500 !important;
+        font-size: 0.92rem !important;
+        color: #94a3b8 !important;
+        border: none !important;
+        background: transparent !important;
+    }
+    .stTabs [aria-selected="true"] {
+        background-color: rgba(250, 204, 21, 0.15) !important;
+        color: #facc15 !important;
+        border: 1px solid rgba(250, 204, 21, 0.4) !important;
+        font-weight: 600 !important;
+    }
+    .stTabs [data-baseweb="tab-highlight"] {
+        display: none !important;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# Try importing model predictor
+# Load model predictor
 try:
     from src.predict import ScamPredictor
     from src.features.url_features import extract_domain_parts
     predictor = ScamPredictor()
 except Exception as e:
     predictor = None
-    st.error(f"Error initializing predictor: {e}. Please ensure models are trained.")
 
-# Header
-st.markdown('<div class="main-title">🛡️ Multi-Channel Cyber Scam & Fraud Detector</div>', unsafe_allow_html=True)
-st.markdown('<div class="subtitle">Production-grade multi-vector threat classification for Phishing Emails, Smishing SMS, and Malicious URLs with explainable AI.</div>', unsafe_allow_html=True)
+# -------------------------------------------------------------
+# 1. Top Navigation Bar
+# -------------------------------------------------------------
+st.markdown("""<div class="nav-container">
+<a href="#" class="brand-logo"><span class="brand-badge-dot"></span> Whitehat AI</a>
+<ul class="nav-links">
+<li><a href="#detection">SMS Scanner</a></li>
+<li><a href="#detection">Email Phishing</a></li>
+<li><a href="#detection">URL Inspector</a></li>
+<li><a href="#detection">Compound Fusion</a></li>
+<li><a href="#detection">Benchmarks</a></li>
+</ul>
+</div>""", unsafe_allow_html=True)
 
-# Sidebar
-with st.sidebar:
-    st.image("https://img.icons8.com/isometric/512/cyber-security.png", width=70)
-    st.title("System Controls")
-    st.markdown("---")
-    st.markdown("### 🔍 Model Architecture")
-    st.markdown("""
-    - **SMS Branch**: TF-IDF + Handcrafted Signals (LR)
-    - **Email Branch**: TF-IDF + Brand Spoofing (LR)
-    - **URL Branch**: XGBoost on Lexical + Levenshtein Distance
-    - **Ensemble Layer**: Stacking Meta-Classifier
-    """)
-    st.markdown("---")
-    st.markdown("### ⚖️ Anti-Leakage Rigor")
-    st.info("URL model uses **Domain-Grouped Split** (`GroupShuffleSplit`) to prevent inflated evaluation metrics.")
-    st.markdown("---")
-    st.caption("Designed for Security & Fraud Prevention Teams")
+# -------------------------------------------------------------
+# 2. Hero Section with Shooting Stars Canvas
+# -------------------------------------------------------------
+st.markdown("""<div class="hero-wrapper">
+<canvas id="hero-stars-canvas" class="hero-stars-canvas"></canvas>
+<div class="hero-content">
+<div class="arch-badges">
+<div class="floating-app-icon icon-1">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+<path d="M6 12C6 15.3137 8.68629 18 12 18C15.3137 18 18 15.3137 18 12C18 8.68629 15.3137 6 12 6C8.68629 6 6 8.68629 6 12Z" fill="#38bdf8"/>
+<path d="M4 8C4 5.79086 5.79086 4 8 4H16C18.2091 4 20 5.79086 20 8V16C20 18.2091 18.2091 20 16 20H8C5.79086 20 4 18.2091 4 16V8Z" stroke="#38bdf8" stroke-width="2"/>
+</svg>
+</div>
+<div class="floating-app-icon icon-2">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+<path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+<path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+<path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
+<path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
+</svg>
+</div>
+<div class="floating-app-icon icon-3">
+<svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+<rect x="3" y="5" width="18" height="14" rx="3" stroke="#facc15" stroke-width="2"/>
+<path d="M3 8L12 13L21 8" stroke="#facc15" stroke-width="2" stroke-linecap="round"/>
+</svg>
+</div>
+<div class="floating-app-icon icon-4">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+<circle cx="12" cy="12" r="10" stroke="#fb923c" stroke-width="2"/>
+<circle cx="9" cy="10" r="1.5" fill="#fb923c"/>
+<circle cx="15" cy="10" r="1.5" fill="#fb923c"/>
+<path d="M8 15C9.5 16.5 14.5 16.5 16 15" stroke="#fb923c" stroke-width="1.8" stroke-linecap="round"/>
+</svg>
+</div>
+<div class="floating-app-icon icon-5">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+<path d="M23 3a10.9 10.9 0 0 1-3.14 1.53 4.48 4.48 0 0 0-7.86 3v1A10.66 10.66 0 0 1 3 4s-4 9 5 13a11.64 11.64 0 0 1-7 2c9 5 20 0 20-11.5a4.5 4.5 0 0 0-.08-.83A7.72 7.72 0 0 0 23 3z" fill="#38bdf8"/>
+</svg>
+</div>
+</div>
+<h1 class="hero-headline">Your Haven for<br><span class="tilted-yellow-word">Seamless</span> AI Fraud Defense</h1>
+<p class="hero-subheadline">
+Empowering you with intelligent, effortless tools to streamline your security workflow, eliminate cyber scams, and protect digital communications—seamlessly.
+</p>
+</div>
+</div>""", unsafe_allow_html=True)
 
-# Main Navigation Tabs
+# -------------------------------------------------------------
+# 3. Interactive Threat Inspection Suite
+# -------------------------------------------------------------
+st.markdown('<div id="detection"></div>', unsafe_allow_html=True)
+
 tab_sms, tab_email, tab_url, tab_incident, tab_metrics = st.tabs([
-    "📱 SMS Smishing",
-    "📧 Email Phishing",
-    "🔗 Malicious URL",
-    "🛡️ Compound Incident",
-    "📊 Metrics & Explainability"
+    "SMS Intelligence",
+    "Email Phishing",
+    "URL Inspector",
+    "Compound Incident",
+    "Model Benchmark"
 ])
 
-
-# ====================================================================
-# TAB 1: SMS Smishing
-# ====================================================================
+# ----------------- TAB 1: SMS -----------------
 with tab_sms:
-    st.subheader("📱 SMS Smishing Detection")
-    st.markdown("Analyze incoming SMS text messages for fraud, account takeovers, and fraudulent payment lures.")
+    col_l, col_r = st.columns([1.1, 0.9], gap="large")
+    with col_l:
+        st.markdown('<div class="card-title">SMS Smishing Detection</div>', unsafe_allow_html=True)
+        st.markdown('<div class="card-description">Inspect SMS messages for deceptive bank notifications, credential theft, and payment scams.</div>', unsafe_allow_html=True)
+        
+        st.markdown("<p style='font-size:0.85rem; font-weight:600; color:#cbd5e1; margin-bottom: 6px;'>Quick Test Presets:</p>", unsafe_allow_html=True)
+        b1, b2 = st.columns(2)
+        sms_val = ""
+        if b1.button("Urgent Bank Alert", key="s_btn1", use_container_width=True):
+            sms_val = "URGENT: Your Chase account has been temporarily locked due to unusual debit activity. Unlock now at http://secure-chase-update.xyz"
+        if b2.button("Legitimate SMS", key="s_btn2", use_container_width=True):
+            sms_val = "Hey Sarah, confirming our lunch meeting tomorrow at 12:30 PM. See you then!"
+            
+        sms_text = st.text_area("Message Content", value=sms_val, height=130, placeholder="Paste or type SMS text here...")
+        run_sms = st.button("Inspect SMS Threat", type="primary", use_container_width=True, key="run_sms_act")
 
-    col1, col2 = st.columns([1.2, 0.8])
-
-    with col1:
-        # Predefined demo buttons
-        st.markdown("**Quick Test Samples:**")
-        bcol1, bcol2 = st.columns(2)
-        sms_default = ""
-        if bcol1.button("🚨 Urgent Bank Scam SMS", key="demo_sms_scam"):
-            sms_default = "URGENT: Your Chase bank account has been suspended due to suspicious activity. Verify now at http://secure-chase-update.xyz"
-        if bcol2.button("✅ Legitimate SMS", key="demo_sms_ham"):
-            sms_default = "Hey Sarah, are we still meeting for lunch at 12:30 today?"
-
-        sms_input = st.text_area("Paste SMS Message Content:", value=sms_default, height=140, placeholder="e.g. URGENT: Action required on your account...")
-        analyze_sms = st.button("🚀 Analyze SMS", type="primary", use_container_width=True)
-
-    with col2:
-        if (analyze_sms or sms_input) and sms_input.strip() and predictor:
-            with st.spinner("Evaluating SMS features..."):
-                res = predictor.predict_sms(sms_input)
-
+    with col_r:
+        if (run_sms or sms_text) and sms_text.strip() and predictor:
+            with st.spinner("Analyzing message vectors..."):
+                res = predictor.predict_sms(sms_text)
+            
             is_scam = res["verdict"] == "SCAM"
-            badge_class = "verdict-badge-scam" if is_scam else "verdict-badge-benign"
-            badge_icon = "🚨" if is_scam else "✅"
+            badge_class = "verdict-scam" if is_scam else "verdict-benign"
+            badge_icon = "Threat Flagged" if is_scam else "Verified Safe"
+            
+            st.markdown(f'<div class="verdict-badge {badge_class}">{badge_icon} — {res["verdict"]}</div>', unsafe_allow_html=True)
+            
+            st.markdown(f"**Calibrated Risk Probability:** `{res['risk_score_pct']}%` ({res['risk_level']})")
+            st.progress(float(res["confidence"]))
 
-            st.markdown(f'<div class="{badge_class}">{badge_icon} VERDICT: {res["verdict"]}</div>', unsafe_allow_html=True)
-            st.markdown(f"### Scam Risk Score: **{res['risk_score_pct']}%** ({res['risk_level']})")
-            st.progress(res["confidence"])
-
-            st.markdown("#### 🔍 Top Explanatory Factors:")
+            st.markdown("<p style='font-weight:600; font-size:0.9rem; margin-top:1.2rem; color:#facc15;'>Key Explainability Signals:</p>", unsafe_allow_html=True)
             for f in res.get("top_factors", []):
-                card_class = "factor-risk" if f["direction"] == "Risk Escalator" else "factor-safe"
-                st.markdown(f'<div class="factor-item {card_class}"><b>{f["direction"]}:</b> {f["feature"]} (Weight: {f["impact"]:+.3f})</div>', unsafe_allow_html=True)
+                pill_type = "factor-risk" if f["direction"] == "Risk Escalator" else "factor-safe"
+                st.markdown(f'''
+                <div class="factor-pill {pill_type}">
+                    <span>{f["feature"]}</span>
+                    <span style="font-weight:600; color:{'#f87171' if f['direction']=='Risk Escalator' else '#facc15'};">{f["impact"]:+.3f}</span>
+                </div>
+                ''', unsafe_allow_html=True)
 
             if res.get("embedded_urls_analysis"):
-                st.markdown("#### 🔗 Embedded URL Threat Assessment:")
-                for u_res in res["embedded_urls_analysis"]:
-                    u_scam = u_res["verdict"] == "SCAM"
-                    u_badge = "🚨 Threat" if u_scam else "✅ Benign"
-                    st.write(f"- `{u_res['url']}`: **{u_badge}** (Risk: {u_res['risk_score_pct']}%)")
+                st.markdown("<p style='font-weight:600; font-size:0.9rem; margin-top:1rem;'>Embedded Link Breakdown:</p>", unsafe_allow_html=True)
+                for u in res["embedded_urls_analysis"]:
+                    tag = "Scam Link" if u["verdict"] == "SCAM" else "Benign Link"
+                    st.caption(f"• **{u['url']}** → {tag} ({u['risk_score_pct']}%)")
+        else:
+            st.markdown("""
+            <div style="background:rgba(15, 23, 42, 0.4); border:1px dashed rgba(255, 255, 255, 0.15); border-radius:16px; padding:3rem 1.5rem; text-align:center; color:#94a3b8;">
+                <p style="margin:0; font-size:0.95rem;">Enter message text or pick a preset sample on the left to view threat analysis.</p>
+            </div>
+            """, unsafe_allow_html=True)
 
-
-# ====================================================================
-# TAB 2: Email Phishing
-# ====================================================================
+# ----------------- TAB 2: Email -----------------
 with tab_email:
-    st.subheader("📧 Email Phishing & Spear-Phishing Detection")
-    st.markdown("Evaluate email bodies and headers for brand spoofing, urgent credential harvesting, and fraudulent lures.")
+    col_l, col_r = st.columns([1.1, 0.9], gap="large")
+    with col_l:
+        st.markdown('<div class="card-title">Email Phishing & BEC Scanner</div>', unsafe_allow_html=True)
+        st.markdown('<div class="card-description">Evaluate email subjects and body text for brand spoofing, urgency heuristics, and credential harvesting.</div>', unsafe_allow_html=True)
+        
+        st.markdown("<p style='font-size:0.85rem; font-weight:600; color:#cbd5e1; margin-bottom: 6px;'>Quick Test Presets:</p>", unsafe_allow_html=True)
+        e1, e2 = st.columns(2)
+        email_val = ""
+        if e1.button("PayPal Phishing Alert", key="e_btn1", use_container_width=True):
+            email_val = "Subject: URGENT: Unauthorized PayPal Access Detected\n\nDear Client,\nWe noticed unusual transactions on your account. To prevent immediate permanent suspension, please verify your identity at http://paypa1-security-login.xyz/auth/verify\n\nPayPal Security Team"
+        if e2.button("Internal Team Email", key="e_btn2", use_container_width=True):
+            email_val = "Subject: Sprint Planning Agenda - Q3 Deliverables\n\nHi Team,\nPlease find attached our agenda for this Thursday's planning session. Let me know if you want to add any talking points.\n\nBest,\nMarcus"
+            
+        email_text = st.text_area("Email Content", value=email_val, height=150, placeholder="Subject: ...\n\nBody...")
+        run_email = st.button("Inspect Email Threat", type="primary", use_container_width=True, key="run_email_act")
 
-    col1, col2 = st.columns([1.2, 0.8])
-
-    with col1:
-        st.markdown("**Quick Test Samples:**")
-        ecol1, ecol2 = st.columns(2)
-        email_default = ""
-        if ecol1.button("🚨 Phishing Email Sample", key="demo_email_scam"):
-            email_default = "Subject: URGENT: Action Required on Your PayPal Account\n\nDear Customer,\nWe detected unauthorized login attempts from an unknown IP address. To avoid account suspension, click here to verify your identity: http://paypa1-security-login.xyz/auth\n\nSecurity Team"
-        if ecol2.button("✅ Safe Work Email Sample", key="demo_email_ham"):
-            email_default = "Subject: Sprint Review Notes and Next Steps\n\nHi Team,\nHere are the notes from our sprint review. Great job hitting our milestones. Let's sync tomorrow at 10 AM.\n\nBest,\nAlex"
-
-        email_input = st.text_area("Paste Email Text (Subject & Body):", value=email_default, height=180, placeholder="Subject: ...\n\nEmail body...")
-        analyze_email = st.button("🚀 Analyze Email", type="primary", use_container_width=True)
-
-    with col2:
-        if (analyze_email or email_input) and email_input.strip() and predictor:
-            with st.spinner("Analyzing email semantics and header markers..."):
-                res = predictor.predict_email(email_input)
-
+    with col_r:
+        if (run_email or email_text) and email_text.strip() and predictor:
+            with st.spinner("Evaluating email semantics..."):
+                res = predictor.predict_email(email_text)
+            
             is_scam = res["verdict"] == "SCAM"
-            badge_class = "verdict-badge-scam" if is_scam else "verdict-badge-benign"
-            badge_icon = "🚨" if is_scam else "✅"
+            badge_class = "verdict-scam" if is_scam else "verdict-benign"
+            badge_icon = "Phishing Flagged" if is_scam else "Legitimate Email"
+            
+            st.markdown(f'<div class="verdict-badge {badge_class}">{badge_icon} — {res["verdict"]}</div>', unsafe_allow_html=True)
+            st.markdown(f"**Phishing Risk Score:** `{res['risk_score_pct']}%` ({res['risk_level']})")
+            st.progress(float(res["confidence"]))
 
-            st.markdown(f'<div class="{badge_class}">{badge_icon} VERDICT: {res["verdict"]}</div>', unsafe_allow_html=True)
-            st.markdown(f"### Phishing Risk Score: **{res['risk_score_pct']}%** ({res['risk_level']})")
-            st.progress(res["confidence"])
-
-            st.markdown("#### 🔍 Top Explanatory Factors:")
+            st.markdown("<p style='font-weight:600; font-size:0.9rem; margin-top:1.2rem; color:#facc15;'>Feature Attribution Factors:</p>", unsafe_allow_html=True)
             for f in res.get("top_factors", []):
-                card_class = "factor-risk" if f["direction"] == "Risk Escalator" else "factor-safe"
-                st.markdown(f'<div class="factor-item {card_class}"><b>{f["direction"]}:</b> {f["feature"]} (Weight: {f["impact"]:+.3f})</div>', unsafe_allow_html=True)
+                pill_type = "factor-risk" if f["direction"] == "Risk Escalator" else "factor-safe"
+                st.markdown(f'''
+                <div class="factor-pill {pill_type}">
+                    <span>{f["feature"]}</span>
+                    <span style="font-weight:600; color:{'#f87171' if f['direction']=='Risk Escalator' else '#facc15'};">{f["impact"]:+.3f}</span>
+                </div>
+                ''', unsafe_allow_html=True)
+        else:
+            st.markdown("""
+            <div style="background:rgba(15, 23, 42, 0.4); border:1px dashed rgba(255, 255, 255, 0.15); border-radius:16px; padding:3rem 1.5rem; text-align:center; color:#94a3b8;">
+                <p style="margin:0; font-size:0.95rem;">Enter email text or select a preset sample to view real-time classification.</p>
+            </div>
+            """, unsafe_allow_html=True)
 
-            if res.get("embedded_urls_analysis"):
-                st.markdown("#### 🔗 Extracted URL Threat Breakdown:")
-                for u_res in res["embedded_urls_analysis"]:
-                    u_scam = u_res["verdict"] == "SCAM"
-                    u_badge = "🚨 Suspicious" if u_scam else "✅ Safe"
-                    st.write(f"- `{u_res['url']}`: **{u_badge}** ({u_res['risk_score_pct']}%)")
-
-
-# ====================================================================
-# TAB 3: Malicious URL Scanner
-# ====================================================================
+# ----------------- TAB 3: URL -----------------
 with tab_url:
-    st.subheader("🔗 Malicious URL & Brand Typosquatting Scanner")
-    st.markdown("Detect weaponized domains, typosquatting (`paypa1.com`), suspicious TLDs, IP-based hosts, and deceptive paths.")
+    col_l, col_r = st.columns([1.1, 0.9], gap="large")
+    with col_l:
+        st.markdown('<div class="card-title">Malicious URL & Typosquatting Engine</div>', unsafe_allow_html=True)
+        st.markdown('<div class="card-description">Extract structural tokens, Levenshtein distance against global brands, deceptive subdomains, and suspicious TLDs.</div>', unsafe_allow_html=True)
+        
+        st.markdown("<p style='font-size:0.85rem; font-weight:600; color:#cbd5e1; margin-bottom: 6px;'>Quick Test Presets:</p>", unsafe_allow_html=True)
+        u1, u2, u3 = st.columns(3)
+        url_val = ""
+        if u1.button("Brand Typosquat", key="u_btn1", use_container_width=True):
+            url_val = "http://paypa1-security-login.xyz/auth/verify"
+        if u2.button("IP Address Host", key="u_btn2", use_container_width=True):
+            url_val = "http://192.168.1.105:8080/admin/login.php"
+        if u3.button("Legitimate Domain", key="u_btn3", use_container_width=True):
+            url_val = "https://www.paypal.com/signin"
+            
+        url_text = st.text_input("Target URL", value=url_val, placeholder="https://example.com/login")
+        run_url = st.button("Inspect Target URL", type="primary", use_container_width=True, key="run_url_act")
 
-    col1, col2 = st.columns([1.2, 0.8])
-
-    with col1:
-        st.markdown("**Quick Test Samples:**")
-        ucol1, ucol2, ucol3 = st.columns(3)
-        url_default = ""
-        if ucol1.button("🚨 Typosquat URL", key="demo_url_typo"):
-            url_default = "http://paypa1-security-login.xyz/auth/verify"
-        if ucol2.button("🚨 IP Host URL", key="demo_url_ip"):
-            url_default = "http://192.168.1.105:8080/admin/login.php"
-        if ucol3.button("✅ Legitimate URL", key="demo_url_legit"):
-            url_default = "https://www.paypal.com/signin"
-
-        url_input = st.text_input("Enter Target URL:", value=url_default, placeholder="https://example.com/login")
-        analyze_url = st.button("🚀 Analyze URL", type="primary", use_container_width=True)
-
-        if url_input.strip():
-            domain_info = extract_domain_parts(url_input)
-            st.markdown("#### 🌐 Domain Decomposition")
+        if url_text.strip():
+            d_info = extract_domain_parts(url_text)
+            st.markdown("<p style='font-weight:600; font-size:0.85rem; margin-top:1rem; color:#94a3b8;'>Host Breakdown:</p>", unsafe_allow_html=True)
             st.json({
-                "Host": domain_info["host"],
-                "Base Domain": domain_info["base_domain"],
-                "TLD": domain_info["tld"],
-                "Subdomains": domain_info["subdomains"],
-                "HTTPS Encryption": "Yes" if domain_info["is_https"] else "No",
-                "Non-Standard Port": "Yes" if domain_info["has_port"] else "No"
+                "Host": d_info["host"],
+                "Base Domain": d_info["base_domain"],
+                "TLD": d_info["tld"],
+                "Subdomains": d_info["subdomains"],
+                "HTTPS Encrypted": d_info["is_https"],
+                "Non-Standard Port": d_info["has_port"]
             })
 
-    with col2:
-        if (analyze_url or url_input) and url_input.strip() and predictor:
-            with st.spinner("Extracting structural features and checking brand distances..."):
-                res = predictor.predict_url(url_input)
-
+    with col_r:
+        if (run_url or url_text) and url_text.strip() and predictor:
+            with st.spinner("Analyzing lexical structures & brand distances..."):
+                res = predictor.predict_url(url_text)
+            
             is_scam = res["verdict"] == "SCAM"
-            badge_class = "verdict-badge-scam" if is_scam else "verdict-badge-benign"
-            badge_icon = "🚨" if is_scam else "✅"
+            badge_class = "verdict-scam" if is_scam else "verdict-benign"
+            badge_icon = "Weaponized Domain" if is_scam else "Clean URL"
+            
+            st.markdown(f'<div class="verdict-badge {badge_class}">{badge_icon} — {res["verdict"]}</div>', unsafe_allow_html=True)
+            st.markdown(f"**URL Threat Score:** `{res['risk_score_pct']}%` ({res['risk_level']})")
+            st.progress(float(res["confidence"]))
 
-            st.markdown(f'<div class="{badge_class}">{badge_icon} VERDICT: {res["verdict"]}</div>', unsafe_allow_html=True)
-            st.markdown(f"### Malicious Risk Score: **{res['risk_score_pct']}%** ({res['risk_level']})")
-            st.progress(res["confidence"])
-
-            st.markdown("#### 🔍 Top Contributing Risk Signals:")
+            st.markdown("<p style='font-weight:600; font-size:0.9rem; margin-top:1.2rem; color:#facc15;'>Top Contributing Risk Factors:</p>", unsafe_allow_html=True)
             for f in res.get("top_factors", []):
-                card_class = "factor-risk" if f["direction"] == "Risk Escalator" else "factor-safe"
-                st.markdown(f'<div class="factor-item {card_class}"><b>{f["direction"]}:</b> {f["feature"]} (Impact: {f["impact"]:+.3f})</div>', unsafe_allow_html=True)
+                pill_type = "factor-risk" if f["direction"] == "Risk Escalator" else "factor-safe"
+                st.markdown(f'''
+                <div class="factor-pill {pill_type}">
+                    <span>{f["feature"]}</span>
+                    <span style="font-weight:600; color:{'#f87171' if f['direction']=='Risk Escalator' else '#facc15'};">{f["impact"]:+.3f}</span>
+                </div>
+                ''', unsafe_allow_html=True)
+        else:
+            st.markdown("""
+            <div style="background:rgba(15, 23, 42, 0.4); border:1px dashed rgba(255, 255, 255, 0.15); border-radius:16px; padding:3rem 1.5rem; text-align:center; color:#94a3b8;">
+                <p style="margin:0; font-size:0.95rem;">Enter a URL or pick a sample to view structural security analysis.</p>
+            </div>
+            """, unsafe_allow_html=True)
 
-
-# ====================================================================
-# TAB 4: Compound Incident Multi-Channel Analyzer
-# ====================================================================
+# ----------------- TAB 4: Compound Incident -----------------
 with tab_incident:
-    st.subheader("🛡️ Multi-Channel Incident Aggregation")
-    st.markdown("Combine signals across text content and embedded URLs through the Stacking Meta-Classifier.")
-
-    inc_email = st.text_area("Incident Email/SMS Body:", height=100, placeholder="Paste incident message body...")
-    inc_url = st.text_input("Associated Target URL (optional):", placeholder="https://...")
-    analyze_inc = st.button("⚡ Run Multi-Channel Ensemble Assessment", type="primary")
-
-    if analyze_inc and (inc_email or inc_url) and predictor:
-        with st.spinner("Aggregating multi-channel signals through Stacking Meta-Model..."):
-            inc_res = predictor.predict_incident(email_text=inc_email, url=inc_url)
-
-        is_scam = inc_res["overall_verdict"] == "SCAM"
-        badge_class = "verdict-badge-scam" if is_scam else "verdict-badge-benign"
-        badge_icon = "🚨" if is_scam else "✅"
-
-        st.markdown(f'<div class="{badge_class}">{badge_icon} UNIFIED INCIDENT VERDICT: {inc_res["overall_verdict"]}</div>', unsafe_allow_html=True)
-        st.markdown(f"### Ensemble Calibrated Risk: **{inc_res['overall_risk_score_pct']}%** ({inc_res['overall_risk_level']})")
-        st.progress(inc_res["overall_confidence"])
-
-        st.markdown("#### 📊 Branch Contribution Breakdown:")
-        b_cols = st.columns(len(inc_res["branches"])) if inc_res["branches"] else [st.container()]
-        for idx, (b_name, b_data) in enumerate(inc_res["branches"].items()):
-            with b_cols[idx]:
-                st.metric(label=f"Branch: {b_name.upper()}", value=f"{b_data['risk_score_pct']}%", delta=b_data["verdict"])
-
-
-# ====================================================================
-# TAB 5: Metrics & Architecture
-# ====================================================================
-with tab_metrics:
-    st.subheader("📊 Production Metrics & Architectural Validation")
+    st.markdown('<div class="card-title">Multi-Channel Compound Incident Fusion</div>', unsafe_allow_html=True)
+    st.markdown('<div class="card-description">Ensemble cross-modality signals across text messages and embedded links with the Stacking Meta-Classifier.</div>', unsafe_allow_html=True)
     
-    # Try reading saved metrics
+    col_a, col_b = st.columns([1.1, 0.9], gap="large")
+    with col_a:
+        inc_body = st.text_area("Incident Message Text", height=120, placeholder="Paste email or SMS body text...")
+        inc_url_input = st.text_input("Associated Target URL (Optional)", placeholder="https://suspicious-site.xyz/...")
+        run_inc = st.button("Evaluate Multi-Channel Incident", type="primary", use_container_width=True)
+
+    with col_b:
+        if run_inc and (inc_body.strip() or inc_url_input.strip()) and predictor:
+            with st.spinner("Synthesizing multi-vector features..."):
+                inc_res = predictor.predict_incident(email_text=inc_body, url=inc_url_input)
+            
+            is_scam = inc_res["overall_verdict"] == "SCAM"
+            badge_class = "verdict-scam" if is_scam else "verdict-benign"
+            badge_icon = "Threat Confirmed" if is_scam else "Verified Safe"
+            
+            st.markdown(f'<div class="verdict-badge {badge_class}">{badge_icon} — {inc_res["overall_verdict"]}</div>', unsafe_allow_html=True)
+            st.markdown(f"**Unified Ensemble Risk:** `{inc_res['overall_risk_score_pct']}%` ({inc_res['overall_risk_level']})")
+            st.progress(float(inc_res["overall_confidence"]))
+
+            st.markdown("<p style='font-weight:600; font-size:0.9rem; margin-top:1.2rem;'>Channel Breakdown:</p>", unsafe_allow_html=True)
+            for b_name, b_data in inc_res.get("branches", {}).items():
+                st.markdown(f'''
+                <div class="factor-pill">
+                    <span style="font-weight:600; text-transform:uppercase;">{b_name}</span>
+                    <span><b>{b_data['verdict']}</b> ({b_data['risk_score_pct']}%)</span>
+                </div>
+                ''', unsafe_allow_html=True)
+        else:
+            st.markdown("""
+            <div style="background:rgba(15, 23, 42, 0.4); border:1px dashed rgba(255, 255, 255, 0.15); border-radius:16px; padding:3rem 1.5rem; text-align:center; color:#94a3b8;">
+                <p style="margin:0; font-size:0.95rem;">Combine an email/SMS body and associated URL to perform unified ensemble assessment.</p>
+            </div>
+            """, unsafe_allow_html=True)
+
+# ----------------- TAB 5: Metrics & Architecture -----------------
+with tab_metrics:
+    st.markdown('<div class="card-title">Production Metrics & Validation Benchmark</div>', unsafe_allow_html=True)
+    st.markdown('<div class="card-description">Zero-leakage GroupShuffleSplit evaluation with cost-sensitive threshold calibration.</div>', unsafe_allow_html=True)
+    
     metrics_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "models_artifacts", "training_metrics.json")
     if os.path.exists(metrics_path):
         with open(metrics_path, "r") as f:
             metrics_data = json.load(f)
-            
-        st.markdown("### 🏆 Branch Performance Summary")
+        
         rows = []
         for branch_key, data in metrics_data.items():
             if isinstance(data, dict) and "precision" in data:
                 rows.append({
-                    "Branch / Model": data.get("model_name", branch_key),
-                    "Precision": f"{data.get('precision', 0):.4f}",
-                    "Recall": f"{data.get('recall', 0):.4f}",
+                    "Modality Branch": data.get("model_name", branch_key).upper(),
+                    "Precision": f"{data.get('precision', 0)*100:.2f}%",
+                    "Recall": f"{data.get('recall', 0)*100:.2f}%",
                     "F1-Score": f"{data.get('f1', 0):.4f}",
                     "ROC-AUC": f"{data.get('roc_auc', 0):.4f}" if data.get('roc_auc') else "N/A",
-                    "False Negatives": data.get("false_negatives", 0),
-                    "Total Test Samples": data.get("total_samples", 0)
+                    "False Negatives": data.get("false_negatives", 0)
                 })
         if rows:
-            st.dataframe(pd.DataFrame(rows), use_container_width=True)
-    else:
-        st.info("Metrics will populate after running model training (`python src/train.py`).")
+            st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
 
-    st.markdown("---")
-    st.markdown("### [COST] Cost-Sensitive Optimization Rationale")
-    st.markdown(r"""
-    In cyber fraud detection, **False Negatives (missed phishing/smishing/malicious URLs) carry catastrophic consequences** (credential theft, wire fraud, ransomware deployment), whereas **False Positives only cause minor friction** (extra user confirmation or secondary sandbox checks).
-    
-    Therefore, our classification pipelines and thresholds are deliberately calibrated to **maximize Recall ($\ge 98\%$)** while maintaining strong precision.
-    """)
+    col_m1, col_m2 = st.columns(2, gap="medium")
+    with col_m1:
+        st.markdown("""
+        <div style="background:rgba(15, 23, 42, 0.6); border:1px solid rgba(255, 255, 255, 0.1); border-radius:16px; padding:1.25rem;">
+            <h4 style="font-family:'Newsreader',serif; font-size:1.15rem; margin-top:0; color:#facc15;">Zero-Leakage Domain Splitting</h4>
+            <p style="font-size:0.88rem; color:#94a3b8; line-height:1.5; margin-bottom:0;">
+                Standard random train/test splits leak registered base domains across sets, causing models to memorize tokens rather than generalized structures. We enforce strict <code>GroupShuffleSplit</code> by base domain.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+    with col_m2:
+        st.markdown("""
+        <div style="background:rgba(15, 23, 42, 0.6); border:1px solid rgba(255, 255, 255, 0.1); border-radius:16px; padding:1.25rem;">
+            <h4 style="font-family:'Newsreader',serif; font-size:1.15rem; margin-top:0; color:#facc15;">Cost-Sensitive Thresholds</h4>
+            <p style="font-size:0.88rem; color:#94a3b8; line-height:1.5; margin-bottom:0;">
+                In cybersecurity, False Negatives carry devastating risk ($10K+ wire fraud / ransomware) compared to minor False Positive friction. Models are calibrated to prioritize Recall (&ge; 98%).
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
 
-    st.markdown("---")
-    st.markdown("### [DATA] Zero-Leakage URL Domain-Grouped Splitting")
-    st.markdown(r"""
-    Standard random train/test splits on URL datasets suffer from severe **data leakage**: multiple URLs sharing the exact same registered domain (`eTLD+1`) appear in both train and test sets, artificially inflating benchmark metrics.
-    
-    We employ **`GroupShuffleSplit` on domain groups**, ensuring the test set contains strictly unseen base domains.
-    """)
+# -------------------------------------------------------------
+# 4. Minimalist Footer
+# -------------------------------------------------------------
+st.markdown("""
+<div style="text-align: center; padding: 3rem 0 1rem 0; color: #64748b; font-size: 0.85rem; border-top: 1px solid rgba(255, 255, 255, 0.08); margin-top: 3rem;">
+    Whitehat AI Threat Intelligence System • Dynamic Net Grid Matrix Defense
+</div>
+""", unsafe_allow_html=True)
