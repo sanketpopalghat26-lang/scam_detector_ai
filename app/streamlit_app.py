@@ -870,11 +870,11 @@ with tab_sms:
                     tag = "Scam Link" if u["verdict"] == "SCAM" else "Benign Link"
                     st.caption(f"• **{u['url']}** → {tag} ({u['risk_score_pct']}%)")
         else:
-            st.markdown("""
-            <div style="background:rgba(15, 23, 42, 0.4); border:1px dashed rgba(255, 255, 255, 0.15); border-radius:16px; padding:3rem 1.5rem; text-align:center; color:#94a3b8;">
-                <p style="margin:0; font-size:0.95rem;">Enter message text or pick a preset sample on the left to view threat analysis.</p>
-            </div>
-            """, unsafe_allow_html=True)
+            st.html(
+                '<div style="background:rgba(15, 23, 42, 0.4); border:1px dashed rgba(255, 255, 255, 0.15); border-radius:16px; padding:3rem 1.5rem; text-align:center; color:#94a3b8;">'
+                '<p style="margin:0; font-size:0.95rem;">Enter message text or pick a preset sample on the left to view threat analysis.</p>'
+                '</div>'
+            )
 
 # ----------------- TAB 2: Email -----------------
 with tab_email:
@@ -917,11 +917,11 @@ with tab_email:
                 </div>
                 ''', unsafe_allow_html=True)
         else:
-            st.markdown("""
-            <div style="background:rgba(15, 23, 42, 0.4); border:1px dashed rgba(255, 255, 255, 0.15); border-radius:16px; padding:3rem 1.5rem; text-align:center; color:#94a3b8;">
-                <p style="margin:0; font-size:0.95rem;">Enter email text or select a preset sample to view real-time classification.</p>
-            </div>
-            """, unsafe_allow_html=True)
+            st.html(
+                '<div style="background:rgba(15, 23, 42, 0.4); border:1px dashed rgba(255, 255, 255, 0.15); border-radius:16px; padding:3rem 1.5rem; text-align:center; color:#94a3b8;">'
+                '<p style="margin:0; font-size:0.95rem;">Enter email text or select a preset sample to view real-time classification.</p>'
+                '</div>'
+            )
 
 # ----------------- TAB 3: URL -----------------
 with tab_url:
@@ -978,11 +978,11 @@ with tab_url:
                 </div>
                 ''', unsafe_allow_html=True)
         else:
-            st.markdown("""
-            <div style="background:rgba(15, 23, 42, 0.4); border:1px dashed rgba(255, 255, 255, 0.15); border-radius:16px; padding:3rem 1.5rem; text-align:center; color:#94a3b8;">
-                <p style="margin:0; font-size:0.95rem;">Enter a URL or pick a sample to view structural security analysis.</p>
-            </div>
-            """, unsafe_allow_html=True)
+            st.html(
+                '<div style="background:rgba(15, 23, 42, 0.4); border:1px dashed rgba(255, 255, 255, 0.15); border-radius:16px; padding:3rem 1.5rem; text-align:center; color:#94a3b8;">'
+                '<p style="margin:0; font-size:0.95rem;">Enter a URL or pick a sample to view structural security analysis.</p>'
+                '</div>'
+            )
 
 # ----------------- TAB 4: Compound Incident -----------------
 with tab_incident:
@@ -1072,12 +1072,12 @@ with tab_incident:
             meta = inc_res.get("ensemble_metadata", {})
             applied_weights = meta.get("applied_weights", {})
             weights_str = " • ".join([f"<b>{k.upper()}</b>: {w*100:.0f}%" for k, w in applied_weights.items()]) if applied_weights else "Equal weighted fusion"
-            st.markdown(f"""
-            <div style="background:rgba(15, 23, 42, 0.55); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:10px 14px; margin: 10px 0;">
-                <span style="font-size:0.8rem; color:#94a3b8; text-transform:uppercase; letter-spacing:0.05em; font-family:'Fira Code',monospace;">Stacking Meta-Layer:</span>
-                <div style="font-size:0.85rem; color:#facc15; margin-top:3px;">{meta.get('method', 'weighted_average').replace('_', ' ').title()} ({weights_str})</div>
-            </div>
-            """, unsafe_allow_html=True)
+            st.html(
+                f'<div style="background:rgba(15, 23, 42, 0.55); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:10px 14px; margin: 10px 0;">'
+                f'<span style="font-size:0.8rem; color:#94a3b8; text-transform:uppercase; letter-spacing:0.05em; font-family:\'Fira Code\',monospace;">Stacking Meta-Layer:</span>'
+                f'<div style="font-size:0.85rem; color:#facc15; margin-top:3px;">{meta.get("method", "weighted_average").replace("_", " ").title()} ({weights_str})</div>'
+                f'</div>'
+            )
 
             st.markdown("<p style='font-weight:600; font-size:0.9rem; margin-top:1rem; color:#facc15;'>Contributing Modality Channels:</p>", unsafe_allow_html=True)
             for b_name, b_data in inc_res.get("branches", {}).items():
@@ -1102,11 +1102,11 @@ with tab_incident:
                     </div>
                     ''', unsafe_allow_html=True)
         else:
-            st.markdown("""
-            <div style="background:rgba(15, 23, 42, 0.4); border:1px dashed rgba(255, 255, 255, 0.15); border-radius:16px; padding:3rem 1.5rem; text-align:center; color:#94a3b8;">
-                <p style="margin:0; font-size:0.95rem;">Select a preset above or provide incident text and an associated target URL to execute multi-channel compound assessment.</p>
-            </div>
-            """, unsafe_allow_html=True)
+            st.html(
+                '<div style="background:rgba(15, 23, 42, 0.4); border:1px dashed rgba(255, 255, 255, 0.15); border-radius:16px; padding:3rem 1.5rem; text-align:center; color:#94a3b8;">'
+                '<p style="margin:0; font-size:0.95rem;">Select a preset above or provide incident text and an associated target URL to execute multi-channel compound assessment.</p>'
+                '</div>'
+            )
 
 # ----------------- TAB 5: Metrics & Architecture -----------------
 with tab_metrics:
@@ -1133,38 +1133,32 @@ with tab_metrics:
         if rows:
             th_style = "padding:10px 14px; text-align:left; border-bottom:1px solid rgba(255,255,255,0.15); color:#facc15; font-family:'Fira Code', monospace; font-size:0.85rem; text-transform:uppercase; letter-spacing:0.05em;"
             td_style = "padding:10px 14px; border-bottom:1px solid rgba(255,255,255,0.06); color:#e2e8f0; font-size:0.9rem;"
-            table_html = f"""
-            <div style="background:rgba(15, 23, 42, 0.7); border:1px solid rgba(255,255,255,0.1); border-radius:12px; overflow:hidden; margin-bottom:1.5rem;">
-                <table style="width:100%; border-collapse:collapse;">
-                    <thead>
-                        <tr style="background:rgba(255,255,255,0.03);">
-                            <th style="{th_style}">Modality Branch</th>
-                            <th style="{th_style}">Precision</th>
-                            <th style="{th_style}">Recall</th>
-                            <th style="{th_style}">F1-Score</th>
-                            <th style="{th_style}">ROC-AUC</th>
-                            <th style="{th_style}">False Negatives</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            """
-            for r in rows:
-                table_html += f"""
-                        <tr>
-                            <td style="{td_style} font-weight:600; color:#38bdf8;">{r['Modality Branch']}</td>
-                            <td style="{td_style}">{r['Precision']}</td>
-                            <td style="{td_style} font-weight:600; color:#4ade80;">{r['Recall']}</td>
-                            <td style="{td_style}">{r['F1-Score']}</td>
-                            <td style="{td_style}">{r['ROC-AUC']}</td>
-                            <td style="{td_style} color:{'#f87171' if r['False Negatives'] > 0 else '#4ade80'};">{r['False Negatives']}</td>
-                        </tr>
-                """
-            table_html += """
-                    </tbody>
-                </table>
-            </div>
-            """
-            st.markdown(table_html, unsafe_allow_html=True)
+            rows_html = "".join([
+                f'<tr>'
+                f'<td style="{td_style} font-weight:600; color:#38bdf8;">{r["Modality Branch"]}</td>'
+                f'<td style="{td_style}">{r["Precision"]}</td>'
+                f'<td style="{td_style} font-weight:600; color:#4ade80;">{r["Recall"]}</td>'
+                f'<td style="{td_style}">{r["F1-Score"]}</td>'
+                f'<td style="{td_style}">{r["ROC-AUC"]}</td>'
+                f'<td style="{td_style} color:{"#f87171" if r["False Negatives"] > 0 else "#4ade80"};">{r["False Negatives"]}</td>'
+                f'</tr>'
+                for r in rows
+            ])
+            table_html = (
+                f'<div style="background:rgba(15, 23, 42, 0.7); border:1px solid rgba(255,255,255,0.1); border-radius:12px; overflow:hidden; margin-bottom:1.5rem;">'
+                f'<table style="width:100%; border-collapse:collapse;">'
+                f'<thead><tr style="background:rgba(255,255,255,0.03);">'
+                f'<th style="{th_style}">Modality Branch</th>'
+                f'<th style="{th_style}">Precision</th>'
+                f'<th style="{th_style}">Recall</th>'
+                f'<th style="{th_style}">F1-Score</th>'
+                f'<th style="{th_style}">ROC-AUC</th>'
+                f'<th style="{th_style}">False Negatives</th>'
+                f'</tr></thead>'
+                f'<tbody>{rows_html}</tbody>'
+                f'</table></div>'
+            )
+            st.html(table_html)
 
     # 2. Interactive Live Benchmark Suite
     st.markdown('<div class="card-title" style="font-size:1.25rem; margin-top:1.5rem;">Interactive Live Benchmark Suite</div>', unsafe_allow_html=True)
@@ -1294,39 +1288,32 @@ with tab_metrics:
 
         adv_th = "padding:9px 12px; text-align:left; border-bottom:1px solid rgba(255,255,255,0.15); color:#facc15; font-family:'Fira Code', monospace; font-size:0.82rem; text-transform:uppercase;"
         adv_td = "padding:9px 12px; border-bottom:1px solid rgba(255,255,255,0.06); font-size:0.85rem;"
-        adv_html = f"""
-        <div style="background:rgba(15, 23, 42, 0.7); border:1px solid rgba(255,255,255,0.1); border-radius:12px; overflow:hidden; margin-bottom:1.5rem;">
-            <table style="width:100%; border-collapse:collapse;">
-                <thead>
-                    <tr style="background:rgba(255,255,255,0.03);">
-                        <th style="{adv_th}">Challenge Vector</th>
-                        <th style="{adv_th}">Type</th>
-                        <th style="{adv_th}">Expected</th>
-                        <th style="{adv_th}">Verdict</th>
-                        <th style="{adv_th}">Score</th>
-                        <th style="{adv_th}">Defense Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-        """
-        for row in adv_results:
-            status_color = "#4ade80" if row["Defense Status"] == "PASSED" else "#f87171"
-            adv_html += f"""
-                    <tr>
-                        <td style="{adv_td} font-weight:600; color:#e2e8f0;">{row['Challenge Vector']}</td>
-                        <td style="{adv_td} color:#38bdf8;">{row['Vector Type']}</td>
-                        <td style="{adv_td}">{row['Expected']}</td>
-                        <td style="{adv_td} font-weight:600; color:{'#f87171' if row['Model Verdict']=='SCAM' else '#4ade80'};">{row['Model Verdict']}</td>
-                        <td style="{adv_td}">{row['Threat Score']}</td>
-                        <td style="{adv_td} font-weight:700; color:{status_color};">{row['Defense Status']}</td>
-                    </tr>
-            """
-        adv_html += """
-                </tbody>
-            </table>
-        </div>
-        """
-        st.markdown(adv_html, unsafe_allow_html=True)
+        adv_rows_html = "".join([
+            f'<tr>'
+            f'<td style="{adv_td} font-weight:600; color:#e2e8f0;">{row["Challenge Vector"]}</td>'
+            f'<td style="{adv_td} color:#38bdf8;">{row["Vector Type"]}</td>'
+            f'<td style="{adv_td}">{row["Expected"]}</td>'
+            f'<td style="{adv_td} font-weight:600; color:{"#f87171" if row["Model Verdict"]=="SCAM" else "#4ade80"};">{row["Model Verdict"]}</td>'
+            f'<td style="{adv_td}">{row["Threat Score"]}</td>'
+            f'<td style="{adv_td} font-weight:700; color:{"#4ade80" if row["Defense Status"] == "PASSED" else "#f87171"};">{row["Defense Status"]}</td>'
+            f'</tr>'
+            for row in adv_results
+        ])
+        adv_html = (
+            f'<div style="background:rgba(15, 23, 42, 0.7); border:1px solid rgba(255,255,255,0.1); border-radius:12px; overflow:hidden; margin-bottom:1.5rem;">'
+            f'<table style="width:100%; border-collapse:collapse;">'
+            f'<thead><tr style="background:rgba(255,255,255,0.03);">'
+            f'<th style="{adv_th}">Challenge Vector</th>'
+            f'<th style="{adv_th}">Type</th>'
+            f'<th style="{adv_th}">Expected</th>'
+            f'<th style="{adv_th}">Verdict</th>'
+            f'<th style="{adv_th}">Score</th>'
+            f'<th style="{adv_th}">Defense Status</th>'
+            f'</tr></thead>'
+            f'<tbody>{adv_rows_html}</tbody>'
+            f'</table></div>'
+        )
+        st.html(adv_html)
 
     # 4. Architecture Foundation Cards
     col_m1, col_m2 = st.columns(2, gap="medium")
