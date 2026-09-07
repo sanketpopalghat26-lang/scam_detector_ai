@@ -1014,7 +1014,40 @@ with tab_metrics:
                     "False Negatives": data.get("false_negatives", 0)
                 })
         if rows:
-            st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+            th_style = "padding:10px 14px; text-align:left; border-bottom:1px solid rgba(255,255,255,0.15); color:#facc15; font-family:'Fira Code', monospace; font-size:0.85rem; text-transform:uppercase; letter-spacing:0.05em;"
+            td_style = "padding:10px 14px; border-bottom:1px solid rgba(255,255,255,0.06); color:#e2e8f0; font-size:0.9rem;"
+            table_html = f"""
+            <div style="background:rgba(15, 23, 42, 0.7); border:1px solid rgba(255,255,255,0.1); border-radius:12px; overflow:hidden; margin-bottom:1.5rem;">
+                <table style="width:100%; border-collapse:collapse;">
+                    <thead>
+                        <tr style="background:rgba(255,255,255,0.03);">
+                            <th style="{th_style}">Modality Branch</th>
+                            <th style="{th_style}">Precision</th>
+                            <th style="{th_style}">Recall</th>
+                            <th style="{th_style}">F1-Score</th>
+                            <th style="{th_style}">ROC-AUC</th>
+                            <th style="{th_style}">False Negatives</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            """
+            for r in rows:
+                table_html += f"""
+                        <tr>
+                            <td style="{td_style} font-weight:600; color:#38bdf8;">{r['Modality Branch']}</td>
+                            <td style="{td_style}">{r['Precision']}</td>
+                            <td style="{td_style} font-weight:600; color:#4ade80;">{r['Recall']}</td>
+                            <td style="{td_style}">{r['F1-Score']}</td>
+                            <td style="{td_style}">{r['ROC-AUC']}</td>
+                            <td style="{td_style} color:{'#f87171' if r['False Negatives'] > 0 else '#4ade80'};">{r['False Negatives']}</td>
+                        </tr>
+                """
+            table_html += """
+                    </tbody>
+                </table>
+            </div>
+            """
+            st.markdown(table_html, unsafe_allow_html=True)
 
     col_m1, col_m2 = st.columns(2, gap="medium")
     with col_m1:
