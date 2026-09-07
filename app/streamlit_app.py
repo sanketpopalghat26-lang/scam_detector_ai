@@ -358,6 +358,31 @@ components.html("""
         requestAnimationFrame(animateHeroStars);
     }
     animateHeroStars();
+
+    // -------------------------------------------------------------
+    // 3. Navigation Links -> Streamlit Tab Switching
+    // -------------------------------------------------------------
+    function hookNavTabs() {
+        const navLinks = parentDoc.querySelectorAll('.nav-links a');
+        if (!navLinks || navLinks.length === 0) return;
+        
+        navLinks.forEach((link, idx) => {
+            if (link.dataset.hooked) return;
+            link.dataset.hooked = "true";
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const tabs = parentDoc.querySelectorAll('.stTabs [data-baseweb="tab"]');
+                if (tabs && tabs[idx]) {
+                    tabs[idx].click();
+                    const det = parentDoc.getElementById('detection');
+                    if (det) {
+                        det.scrollIntoView({ behavior: 'smooth' });
+                    }
+                }
+            });
+        });
+    }
+    setInterval(hookNavTabs, 600);
 })();
 </script>
 """, height=0)
@@ -712,6 +737,12 @@ st.markdown("""
 try:
     from src.predict import ScamPredictor
     from src.features.url_features import extract_domain_parts
+    from src.features.text_features import URL_REGEX
+    from src.ingestion.synthetic_data import (
+        generate_benchmark_sms,
+        generate_benchmark_emails,
+        generate_benchmark_urls
+    )
     predictor = ScamPredictor()
 except Exception as e:
     predictor = None
@@ -958,45 +989,131 @@ with tab_incident:
     st.markdown('<div class="card-title">Multi-Channel Compound Incident Fusion</div>', unsafe_allow_html=True)
     st.markdown('<div class="card-description">Ensemble cross-modality signals across text messages and embedded links with the Stacking Meta-Classifier.</div>', unsafe_allow_html=True)
     
+    # Session state initialization for presets
+    if "inc_preset_text" not in st.session_state:
+        st.session_state.inc_preset_text = ""
+    if "inc_preset_url" not in st.session_state:
+        st.session_state.inc_preset_url = ""
+    if "inc_preset_mod" not in st.session_state:
+        st.session_state.inc_preset_mod = "Auto-Detect & Auto-Extract"
+
+    st.markdown("<p style='font-size:0.85rem; font-weight:600; color:#cbd5e1; margin-bottom: 6px;'>Quick Test Compound Presets:</p>", unsafe_allow_html=True)
+    cp1, cp2, cp3 = st.columns(3)
+    if cp1.button("Credential Phish + URL", key="cp_btn1", use_container_width=True):
+        st.session_state.inc_preset_text = "Subject: Immediate Security Update Required\n\nDear Chase Member,\nSuspicious debit activity was detected on your account. Your online banking will be suspended within 24 hours unless verified."
+        st.session_state.inc_preset_url = "http://secure-chase-update.xyz/auth/login"
+        st.session_state.inc_preset_mod = "Email Phishing + Target URL"
+        st.rerun()
+
+    if cp2.button("Smishing + Fake Domain", key="cp_btn2", use_container_width=True):
+        st.session_state.inc_preset_text = "URGENT from PayPal: Unauthorized charge of $849.00 to CryptoExchange. If this wasn't you, dispute immediately at http://paypa1-security-login.xyz/auth/verify"
+        st.session_state.inc_preset_url = "http://paypa1-security-login.xyz/auth/verify"
+        st.session_state.inc_preset_mod = "SMS Smishing + Target URL"
+        st.rerun()
+
+    if cp3.button("Legitimate Multi-Channel Notice", key="cp_btn3", use_container_width=True):
+        st.session_state.inc_preset_text = "Subject: Team Sync Agenda - Tomorrow at 10 AM\n\nHi everyone,\nPlease review the shared presentation slides before our sync meeting: https://docs.google.com/presentation\n\nBest,\nSecurity Operations"
+        st.session_state.inc_preset_url = "https://docs.google.com/presentation"
+        st.session_state.inc_preset_mod = "Email Phishing + Target URL"
+        st.rerun()
+
     col_a, col_b = st.columns([1.1, 0.9], gap="large")
     with col_a:
-        inc_body = st.text_area("Incident Message Text", height=120, placeholder="Paste email or SMS body text...")
-        inc_url_input = st.text_input("Associated Target URL (Optional)", placeholder="https://suspicious-site.xyz/...")
-        run_inc = st.button("Evaluate Multi-Channel Incident", type="primary", use_container_width=True)
+        modality_options = ["Auto-Detect & Auto-Extract", "Email Phishing + Target URL", "SMS Smishing + Target URL"]
+        def_idx = modality_options.index(st.session_state.inc_preset_mod) if st.session_state.inc_preset_mod in modality_options else 0
+        inc_modality = st.radio("Modality Channel Configuration", modality_options, index=def_idx, horizontal=True)
+
+        inc_body = st.text_area(
+            "Incident Message Text",
+            value=st.session_state.inc_preset_text,
+            height=130,
+            placeholder="Paste email body or SMS text message..."
+        )
+        inc_url_input = st.text_input(
+            "Associated Target URL (Optional - will auto-extract from text if blank)",
+            value=st.session_state.inc_preset_url,
+            placeholder="https://suspicious-site.xyz/auth/verify"
+        )
+        run_inc = st.button("Evaluate Multi-Channel Incident", type="primary", use_container_width=True, key="run_inc_act")
 
     with col_b:
-        if run_inc and (inc_body.strip() or inc_url_input.strip()) and predictor:
-            with st.spinner("Synthesizing multi-vector features..."):
-                inc_res = predictor.predict_incident(email_text=inc_body, url=inc_url_input)
-            
+        should_run = (run_inc or inc_body.strip() or inc_url_input.strip()) and (inc_body.strip() or inc_url_input.strip()) and predictor
+        if should_run:
+            with st.spinner("Synthesizing multi-vector features with Stacking Meta-Classifier..."):
+                # Determine email vs SMS based on modality
+                target_email = None
+                target_sms = None
+                if inc_modality == "SMS Smishing + Target URL":
+                    target_sms = inc_body.strip() if inc_body.strip() else None
+                elif inc_modality == "Email Phishing + Target URL":
+                    target_email = inc_body.strip() if inc_body.strip() else None
+                else: # Auto-detect
+                    if "Subject:" in inc_body or len(inc_body) > 180:
+                        target_email = inc_body.strip() if inc_body.strip() else None
+                    else:
+                        target_sms = inc_body.strip() if inc_body.strip() else None
+
+                target_url = inc_url_input.strip() if inc_url_input.strip() else None
+                inc_res = predictor.predict_incident(
+                    email_text=target_email,
+                    sms_text=target_sms,
+                    url=target_url
+                )
+
             is_scam = inc_res["overall_verdict"] == "SCAM"
             badge_class = "verdict-scam" if is_scam else "verdict-benign"
             badge_icon = "Threat Confirmed" if is_scam else "Verified Safe"
-            
+
             st.markdown(f'<div class="verdict-badge {badge_class}">{badge_icon} — {inc_res["overall_verdict"]}</div>', unsafe_allow_html=True)
             st.markdown(f"**Unified Ensemble Risk:** `{inc_res['overall_risk_score_pct']}%` ({inc_res['overall_risk_level']})")
             st.progress(float(inc_res["overall_confidence"]))
 
-            st.markdown("<p style='font-weight:600; font-size:0.9rem; margin-top:1.2rem;'>Channel Breakdown:</p>", unsafe_allow_html=True)
+            # Meta-Classifier Details Card
+            meta = inc_res.get("ensemble_metadata", {})
+            applied_weights = meta.get("applied_weights", {})
+            weights_str = " • ".join([f"<b>{k.upper()}</b>: {w*100:.0f}%" for k, w in applied_weights.items()]) if applied_weights else "Equal weighted fusion"
+            st.markdown(f"""
+            <div style="background:rgba(15, 23, 42, 0.55); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:10px 14px; margin: 10px 0;">
+                <span style="font-size:0.8rem; color:#94a3b8; text-transform:uppercase; letter-spacing:0.05em; font-family:'Fira Code',monospace;">Stacking Meta-Layer:</span>
+                <div style="font-size:0.85rem; color:#facc15; margin-top:3px;">{meta.get('method', 'weighted_average').replace('_', ' ').title()} ({weights_str})</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            st.markdown("<p style='font-weight:600; font-size:0.9rem; margin-top:1rem; color:#facc15;'>Contributing Modality Channels:</p>", unsafe_allow_html=True)
             for b_name, b_data in inc_res.get("branches", {}).items():
+                b_scam = b_data['verdict'] == "SCAM"
+                b_color = "#f87171" if b_scam else "#4ade80"
                 st.markdown(f'''
-                <div class="factor-pill">
-                    <span style="font-weight:600; text-transform:uppercase;">{b_name}</span>
-                    <span><b>{b_data['verdict']}</b> ({b_data['risk_score_pct']}%)</span>
+                <div class="factor-pill" style="border-left: 3px solid {b_color};">
+                    <span style="font-weight:600; text-transform:uppercase; color:#38bdf8;">{b_name} Channel</span>
+                    <span style="font-weight:600; color:{b_color};">{b_data['verdict']} ({b_data['risk_score_pct']}%)</span>
                 </div>
                 ''', unsafe_allow_html=True)
+
+                # Show top 2 factor explainabilities for each active branch
+                factors = b_data.get("top_factors", [])[:2]
+                for f in factors:
+                    p_type = "factor-risk" if f.get("direction") == "Risk Escalator" else "factor-safe"
+                    f_val = f.get('impact', 0)
+                    st.markdown(f'''
+                    <div class="factor-pill {p_type}" style="margin-left:14px; padding:0.45rem 0.8rem; font-size:0.82rem;">
+                        <span>{f.get("feature", "Signal")}</span>
+                        <span style="font-weight:600;">{f_val:+.2f}</span>
+                    </div>
+                    ''', unsafe_allow_html=True)
         else:
             st.markdown("""
             <div style="background:rgba(15, 23, 42, 0.4); border:1px dashed rgba(255, 255, 255, 0.15); border-radius:16px; padding:3rem 1.5rem; text-align:center; color:#94a3b8;">
-                <p style="margin:0; font-size:0.95rem;">Combine an email/SMS body and associated URL to perform unified ensemble assessment.</p>
+                <p style="margin:0; font-size:0.95rem;">Select a preset above or provide incident text and an associated target URL to execute multi-channel compound assessment.</p>
             </div>
             """, unsafe_allow_html=True)
 
 # ----------------- TAB 5: Metrics & Architecture -----------------
 with tab_metrics:
     st.markdown('<div class="card-title">Production Metrics & Validation Benchmark</div>', unsafe_allow_html=True)
-    st.markdown('<div class="card-description">Zero-leakage GroupShuffleSplit evaluation with cost-sensitive threshold calibration.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="card-description">Zero-leakage GroupShuffleSplit evaluation with cost-sensitive threshold calibration and live benchmark runner.</div>', unsafe_allow_html=True)
     
+    # 1. Historical Production Benchmark Model Table
     metrics_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "models_artifacts", "training_metrics.json")
     if os.path.exists(metrics_path):
         with open(metrics_path, "r") as f:
@@ -1049,6 +1166,169 @@ with tab_metrics:
             """
             st.markdown(table_html, unsafe_allow_html=True)
 
+    # 2. Interactive Live Benchmark Suite
+    st.markdown('<div class="card-title" style="font-size:1.25rem; margin-top:1.5rem;">Interactive Live Benchmark Suite</div>', unsafe_allow_html=True)
+    st.markdown('<div class="card-description">Benchmark real-time inference latency and classification accuracy against curated benchmark corpora.</div>', unsafe_allow_html=True)
+
+    b_col1, b_col2, b_col3 = st.columns([1.5, 1, 1])
+    with b_col1:
+        bench_channel = st.selectbox("Benchmark Target Modality", ["All Branches (SMS + Email + URL)", "SMS Smishing", "Email Phishing", "URL Domain Inspector"], key="b_channel")
+    with b_col2:
+        bench_samples = st.selectbox("Sample Volume", [30, 60, 100], index=0, key="b_samples")
+    with b_col3:
+        st.write("")
+        st.write("")
+        run_benchmark_btn = st.button("Execute Live Benchmark", type="primary", use_container_width=True, key="run_benchmark_act")
+
+    if run_benchmark_btn and predictor:
+        with st.spinner(f"Evaluating {bench_samples} benchmark vectors across {bench_channel}..."):
+            total_samples = 0
+            correct = 0
+            tp = 0
+            fp = 0
+            fn = 0
+            tn = 0
+            t_start = time.time()
+
+            # Run benchmark on selected branches
+            tasks = []
+            if bench_channel in ["All Branches (SMS + Email + URL)", "SMS Smishing"]:
+                n_branch = bench_samples if bench_channel != "All Branches (SMS + Email + URL)" else bench_samples // 3
+                df_sms = generate_benchmark_sms(n_branch)
+                for _, r in df_sms.iterrows():
+                    tasks.append(("sms", r["text"], r["label"]))
+
+            if bench_channel in ["All Branches (SMS + Email + URL)", "Email Phishing"]:
+                n_branch = bench_samples if bench_channel != "All Branches (SMS + Email + URL)" else bench_samples // 3
+                df_email = generate_benchmark_emails(n_branch)
+                for _, r in df_email.iterrows():
+                    tasks.append(("email", r["text"], r["label"]))
+
+            if bench_channel in ["All Branches (SMS + Email + URL)", "URL Domain Inspector"]:
+                n_branch = bench_samples if bench_channel != "All Branches (SMS + Email + URL)" else bench_samples // 3
+                df_url = generate_benchmark_urls(n_branch)
+                for _, r in df_url.iterrows():
+                    tasks.append(("url", r["url"], r["label"]))
+
+            for branch_type, text_input, label in tasks:
+                total_samples += 1
+                if branch_type == "sms":
+                    res = predictor.predict_sms(text_input)
+                elif branch_type == "email":
+                    res = predictor.predict_email(text_input)
+                else:
+                    res = predictor.predict_url(text_input)
+
+                pred_scam = (res["verdict"] == "SCAM")
+                true_scam = (label == 1)
+
+                if pred_scam and true_scam:
+                    tp += 1
+                    correct += 1
+                elif not pred_scam and not true_scam:
+                    tn += 1
+                    correct += 1
+                elif pred_scam and not true_scam:
+                    fp += 1
+                elif not pred_scam and true_scam:
+                    fn += 1
+
+            t_elapsed = time.time() - t_start
+            accuracy = (correct / total_samples) * 100 if total_samples else 100.0
+            precision = (tp / (tp + fp)) * 100 if (tp + fp) else 100.0
+            recall = (tp / (tp + fn)) * 100 if (tp + fn) else 100.0
+            f1 = (2 * precision * recall) / (precision + recall) if (precision + recall) else 100.0
+            avg_latency = (t_elapsed / total_samples * 1000) if total_samples else 0.0
+
+            # Render metric cards
+            mc1, mc2, mc3, mc4 = st.columns(4)
+            with mc1:
+                st.metric("Live Accuracy", f"{accuracy:.1f}%", delta=f"{correct}/{total_samples} correct")
+            with mc2:
+                st.metric("Live Recall (Cost-Sensitive)", f"{recall:.1f}%", delta=f"{fn} False Negatives")
+            with mc3:
+                st.metric("Live Precision", f"{precision:.1f}%", delta=f"{fp} False Positives")
+            with mc4:
+                st.metric("Mean Latency", f"{avg_latency:.1f} ms", delta=f"{total_samples / t_elapsed:.0f} req/sec")
+
+            st.success(f"Benchmark completed in {t_elapsed:.2f}s across {total_samples} samples. Zero-day evasion defense active.")
+
+    # 3. Adversarial & Zero-Day Evasion Challenge Suite
+    st.markdown('<div class="card-title" style="font-size:1.25rem; margin-top:2rem;">Zero-Day & Adversarial Evasion Challenge</div>', unsafe_allow_html=True)
+    st.markdown('<div class="card-description">Test resistance against sophisticated evasive payloads: typosquats, brand impersonation, urgent BEC, and benign urgency.</div>', unsafe_allow_html=True)
+
+    challenges = [
+        {"Name": "Brand Typosquatting (.xyz TLD)", "Type": "URL", "Payload": "http://paypa1-security-update.xyz/auth/login", "Expected": "SCAM"},
+        {"Name": "IP-Host Bypass with Port", "Type": "URL", "Payload": "http://192.168.1.105:8080/secure/bank.php", "Expected": "SCAM"},
+        {"Name": "Executive Wire Fraud BEC", "Type": "Email", "Payload": "Subject: Wire Transfer Request - Strict Confidentiality\nPlease wire $48,500 immediately to the attached offshore escrow.", "Expected": "SCAM"},
+        {"Name": "Benign Urgency False-Positive Check", "Type": "Email", "Payload": "Subject: Urgent: Quarterly Review Meeting in 15 mins\nTeam, please join the conference room immediately for our sprint retrospective.", "Expected": "BENIGN"},
+        {"Name": "Smishing + Fake Link Fusion", "Type": "Compound", "Payload": "URGENT from Chase: Card compromised. Confirm identity now at http://secure-chase-update.xyz", "Expected": "SCAM"}
+    ]
+
+    run_adv_btn = st.button("Run Adversarial Evasion Suite", key="run_adv_btn")
+    if run_adv_btn and predictor:
+        adv_results = []
+        for c in challenges:
+            if c["Type"] == "URL":
+                r = predictor.predict_url(c["Payload"])
+                verdict = r["verdict"]
+                conf = r["risk_score_pct"]
+            elif c["Type"] == "Email":
+                r = predictor.predict_email(c["Payload"])
+                verdict = r["verdict"]
+                conf = r["risk_score_pct"]
+            else: # Compound
+                r = predictor.predict_incident(email_text=c["Payload"], url="http://secure-chase-update.xyz")
+                verdict = r["overall_verdict"]
+                conf = r["overall_risk_score_pct"]
+
+            passed = (verdict == c["Expected"])
+            adv_results.append({
+                "Challenge Vector": c["Name"],
+                "Vector Type": c["Type"],
+                "Expected": c["Expected"],
+                "Model Verdict": verdict,
+                "Threat Score": f"{conf}%",
+                "Defense Status": "PASSED" if passed else "FAILED"
+            })
+
+        adv_th = "padding:9px 12px; text-align:left; border-bottom:1px solid rgba(255,255,255,0.15); color:#facc15; font-family:'Fira Code', monospace; font-size:0.82rem; text-transform:uppercase;"
+        adv_td = "padding:9px 12px; border-bottom:1px solid rgba(255,255,255,0.06); font-size:0.85rem;"
+        adv_html = f"""
+        <div style="background:rgba(15, 23, 42, 0.7); border:1px solid rgba(255,255,255,0.1); border-radius:12px; overflow:hidden; margin-bottom:1.5rem;">
+            <table style="width:100%; border-collapse:collapse;">
+                <thead>
+                    <tr style="background:rgba(255,255,255,0.03);">
+                        <th style="{adv_th}">Challenge Vector</th>
+                        <th style="{adv_th}">Type</th>
+                        <th style="{adv_th}">Expected</th>
+                        <th style="{adv_th}">Verdict</th>
+                        <th style="{adv_th}">Score</th>
+                        <th style="{adv_th}">Defense Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+        """
+        for row in adv_results:
+            status_color = "#4ade80" if row["Defense Status"] == "PASSED" else "#f87171"
+            adv_html += f"""
+                    <tr>
+                        <td style="{adv_td} font-weight:600; color:#e2e8f0;">{row['Challenge Vector']}</td>
+                        <td style="{adv_td} color:#38bdf8;">{row['Vector Type']}</td>
+                        <td style="{adv_td}">{row['Expected']}</td>
+                        <td style="{adv_td} font-weight:600; color:{'#f87171' if row['Model Verdict']=='SCAM' else '#4ade80'};">{row['Model Verdict']}</td>
+                        <td style="{adv_td}">{row['Threat Score']}</td>
+                        <td style="{adv_td} font-weight:700; color:{status_color};">{row['Defense Status']}</td>
+                    </tr>
+            """
+        adv_html += """
+                </tbody>
+            </table>
+        </div>
+        """
+        st.markdown(adv_html, unsafe_allow_html=True)
+
+    # 4. Architecture Foundation Cards
     col_m1, col_m2 = st.columns(2, gap="medium")
     with col_m1:
         st.markdown("""

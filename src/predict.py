@@ -7,6 +7,7 @@ import json
 import os
 import sys
 import re
+import numpy as np
 
 # Ensure project root is in sys.path
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -136,6 +137,17 @@ class ScamPredictor:
 
     def predict_incident(self, email_text: str = None, sms_text: str = None, url: str = None) -> dict:
         """Multi-channel compound incident risk assessment."""
+        email_text = email_text.strip() if email_text and email_text.strip() else None
+        sms_text = sms_text.strip() if sms_text and sms_text.strip() else None
+        url = url.strip() if url and url.strip() else None
+
+        # If no target URL was explicitly provided, auto-extract from email or SMS text
+        if not url:
+            combined_text = (email_text or "") + " " + (sms_text or "")
+            found_urls = URL_REGEX.findall(combined_text)
+            if found_urls:
+                url = found_urls[0]
+
         branch_scores = {}
         branch_details = {}
 
